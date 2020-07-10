@@ -34,8 +34,12 @@ source("functions.R")
 ###################################################
 # Data  
 ###################################################
-btc <- getCryptoHistoricalPrice("bitcoin")
-eth <- getCryptoHistoricalPrice("ethereum")
+#getCryptoHistoricalPrice("bitcoin") %>% write_csv('data/btc.csv')
+#getCryptoHistoricalPrice("ethereum") %>% write_csv('data/eth.csv')
+
+btc <- read_csv('data/btc.csv')
+eth <- read_csv('data/eth.csv')
+
 
 ### Basic ETA ### 
 # Shape

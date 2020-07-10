@@ -17,26 +17,26 @@ knitr::opts_chunk$set(
 # Abstract
 For predicting Bitcoin and Etherium prices both ARIMA and VAR models 
 seem to be good choices. ARIMA was slightly weaker with sMAPE of
-*4.3%*, compared to *3.4%* achived by the VAR model. It was observed 
+*4.3%*, compared to *3.4%* achieved by the VAR model. It was observed 
 that for the examined period of time, Bitcoin and Etherium close
 prices are cointegrated. 
 
 
 # Aim of the study
-This study tries to create optimal models for predicting Bitcoin and Etherum
+This study tries to create optimal models for predicting Bitcoin and Etherium
 prices by testing currency cointegration and creating optimized ARIMA and VAR models.
 
 # Data
 
-This study will be conducted on the daily closing prices of two crytpocurrencies - 
-Bitcoin and Etherium. Bitcoin was choosen because it is a dominant force on the market, 
-Etherium was choosen because it seems to follow Bitcoin price very closely.   
+This study will be conducted on the daily closing prices of two cryptocurrencies - 
+Bitcoin and Etherium. Bitcoin was chosen because it is a dominant force on the market, 
+Etherium was chosen because it seems to follow Bitcoin price very closely.   
 
-The dates are from 2019-01-01 to today. This gives enought data to estimate the models,
-while at the same time reomves the one-of-a-kind huge price surge that happened in 
+The dates are from 2019-01-01 to today. This gives enough data to estimate the models,
+while at the same time removes the one-of-a-kind huge price surge that happened in 
 2018.   
 
-Out of sample period for estimation was choosen to be 30 days. It should be enough
+Out of sample period for estimation was chosen to be 30 days. It should be enough
 to test the models, but not too long as to give increased errors.   
 
 The data structure is as follows. It was downloaded from coinmarketcap.com and saved into csv files.   
@@ -93,7 +93,7 @@ btc %>%
 	)
 ```
 
-The Etherium plot looks very simmilar to Bitcoin, aldought 
+The Etherium plot looks very similar to Bitcoin, although 
 it seems to have slightly higher variance.   
 
 ```{r plot_eth}
@@ -110,8 +110,8 @@ eth %>%
 \newpage
 
 Plotting both prices as % of a max price confirms this. 
-Etherium reacts to changes stronger than Bitcoin. They do hovever 
-seem very cointgrated. 
+Etherium reacts to changes stronger than Bitcoin. They do however 
+seem very cointegrated. 
 
 ```{r plot_both}
 btc$source <- 'Bitcoin'
@@ -134,10 +134,10 @@ bind_rows(btc, eth) %>%
 	)
 ```
 
-This is the same plot, but as a difference beetween prices. 
+This is the same plot, but as a difference between prices. 
 As it can be seen, when the change is very short and strong, 
 the prices move like one. This could be a result of automated 
-trading, but more indepth research would be required.   
+trading, but more in-depth research would be required.   
 
 ```{r plot_both_2}
 bind_rows(btc, eth) %>%
@@ -194,7 +194,7 @@ testdf(variable = data$Dbtc,
 	   max.augmentations = 5)
 ```
 
-Some lags seem to be on the verge of beeing significant. Thanks to the
+Some lags seem to be on the verge of being significant. Thanks to the
 power of modern PC, running *auto.arima* on max parameters of (240, 1, 240) 
 takes only a minute. 
 
@@ -232,8 +232,8 @@ BTC.arima2010.small <- Arima(data$btc,
 coeftest(BTC.arima2010.small)
 ```
 
-The residuals have a mean of zero, but the vairance is not
-const. This is due to the changes in vairance of the 
+The residuals have a mean of zero, but the variance is not
+const. This is due to the changes in variance of the 
 underlying variable.   
 
 ```{r fig.height = 7}
@@ -266,7 +266,7 @@ Box.test(resid(BTC.arima2010.small), type = "Ljung-Box", lag = 10)
 
 ## Etherium
 
-Jugding by the BG test, Etherium prices are a I(1) process, so one 
+Judging by the BG test, Etherium prices are a I(1) process, so one 
 augmentation should be enough.
 
 ```{r }
@@ -274,7 +274,7 @@ testdf(variable = data$eth,
 	   max.augmentations = 5)
 ```
 
-Testing the variable differenced onec confirms this. BG is not 
+Testing the variable differenced once confirms this. BG is not 
 significant here for 0 augmentations, which means that there is 
 no autocorrelation in the variable.
 
@@ -327,14 +327,14 @@ coeftest(ETH.arima5120.small)
 
 Residuals have mean of 0, but they are not stationary 
 because the variance changes. This is due to the original data that 
-has significant spikes in pric in some places, so nothing really can be done 
+has significant spikes in price in some places, so nothing really can be done 
 about it.   
 
 ```{r fig.height = 6}
 plot(resid(ETH.arima5120.small))
 ```
 
-Everything is insignificant, on on the verge os significance, which is good news.   
+Everything is insignificant, on on the verge of significance, which is good news.   
 
 ```{r double_plot_eth}
 par(mfrow = c(2, 1)) 
@@ -352,7 +352,7 @@ par(mfrow = c(1, 1))
 ```
 
 BJ test confirms that the residuals are not in fact
-autocerrelated. 
+autocorrelated. 
 
 ```{r }
 Box.test(resid(ETH.arima5120.small), type = "Ljung-Box", lag = 10)
@@ -362,9 +362,9 @@ Box.test(resid(ETH.arima5120.small), type = "Ljung-Box", lag = 10)
 # ARIMA forecasting
 
 30 day ARIMA forecast for the Bitcoin is close to the real values,
-aldought it seems to overestimate the price and ignore the 
+although it seems to overestimate the price and ignore the 
 downward trend present in the data. 
-Becaues the price is so stable, the precistion looks kind of 
+Because the price is so stable, the prediction looks kind of 
 like a naive prediction.    
 
 ```{r arima_forecast_btc}
@@ -386,7 +386,7 @@ forecast(BTC.arima2010.small, h = 30) %>%                  # Forecast
 		)
 ```
 
-Simmilar results for Etherium - aldought here it seems that 
+Similar results for Etherium - although here it seems that 
 the model was able to predict the general downward trend.
 It can be said that it predicted it too much.    
 
@@ -419,7 +419,7 @@ linear model can be estimated. The coefficient for eth
 is very significant, which means that they are in fact cointegrated.    
 
 It seems that a increase in price of ETH by 1 USD means 
-increase od BTC price by around 37 USD.    
+increase of BTC price by around 37 USD.    
 
 ```{r lm}
 # BTC and ETH are I(1)
@@ -442,7 +442,7 @@ testdf(variable = residuals(model.coint),
 
 The inclusion of lagged residuals seem to be a good
 decision. The coefficient is significant, which 
-hints taht there is a long term relationship
+hints that there is a long term relationship
 between this variables in addition to the short term one
 (indicated by the eth).   
 
@@ -454,7 +454,7 @@ summary(model.ecm)
 ```
 
 Granger test confirms that for 5 lags, there exist a 
-Granger Casuality eth -> btc.   
+Granger Causality eth -> btc.   
 
 ```{r }
 grangertest(btc ~ eth, 
@@ -463,7 +463,7 @@ grangertest(btc ~ eth,
 ```
 
 The same results for the other direction. 
-Significant Granger Casuality for btc -> eth.   
+Significant Granger Causality for btc -> eth.   
 
 ```{r }
 grangertest(eth ~ btc, 
@@ -474,7 +474,7 @@ grangertest(eth ~ btc,
 
 \newpage
 # VAR model
-*VARselect* function is very usefull when searching for the right number of lags in the VAR model.
+*VARselect* function is very useful when searching for the right number of lags in the VAR model.
 Here, the optimal number seem to be 7 lags, based on AIC and FPE. Could also be 1, 
 but that is not very interesting. 
 ```{r var}
@@ -499,7 +499,7 @@ serial.test(var.model)
 ```
 
 Breusch-Godfrey test finds no reason to 
-reject the null hyphotesis that the residuals 
+reject the null hypothesis that the residuals 
 are not autocorrelated.
 
 ```{r }
@@ -540,7 +540,7 @@ var.forecast[["fcst"]][["btc"]] %>%
 
 
 Same story with Etherium. The predictions are very stable, but they do follow the 
-general trend in the data. They also look kind of like a linear reggresion.      
+general trend in the data. They also look kind of like a linear regression.      
 
 
 ```{r forecast_var_eth}
@@ -623,15 +623,15 @@ Final models for ARIMA were:
 - ARIMA(20, 1, 0) - Bitcoin
 - ARIMA(5, 1, 20) - Etherium
 
-For VAR, the best number of lags was 7. The VAR model achived better results,
+For VAR, the best number of lags was 7. The VAR model achieved better results,
 thanks to very strong cointegration of the two prices.   
 
 Next steps would be to test more currency pairs (ideally using some 
 kind of automation automation). If good results were found 
-for some smaller currencys, they could be used for trading. 
+for some smaller currencies, they could be used for trading. 
 When testing multiple times, one needs to be wary of the type one error.
 Assuming a lower p value of e.g. 0.01 would be advisable.   
 
-Other possibilites could be to use cross validation to test the performance 
-of the models on different parts of data (the one choosen was quite calm). 
+Other possibilities could be to use cross validation to test the performance 
+of the models on different parts of data (the one chosen was quite calm). 
 

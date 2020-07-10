@@ -343,40 +343,47 @@ forecast(ETH.arima5120.small, h = 30) %>%                  # Forecast
 	)
 ```
 
-
-```{r }
-
-```
-
-
-```{r }
-
-```
-
-
-```{r }
-
-```
-
-
-```{r }
-
-```
-
-
-```{r }
-
-```
-
-
-```{r }
-
-```
-
-
-
-
 # Cointegration testing
+
+
+```{r }
+# BTC and ETH are I(1)
+model.coint <- lm(btc ~ eth, 
+				  data = data)
+
+summary(model.coint)
+```
+
+
+```{r }
+testdf(variable = residuals(model.coint), 
+	   max.augmentations = 3)
+
+```
+
+
+```{r }
+data$lresid <- lag.xts(residuals(model.coint))
+model.ecm <- lm(btc ~ eth + lresid - 1,
+				data = data) 
+summary(model.ecm)
+```
+
+
+```{r }
+grangertest(btc ~ eth, 
+			data = data,
+			order = 5) 
+```
+
+
+```{r }
+grangertest(eth ~ btc, 
+			data = data,
+			order = 5)
+```
+
+
 
 # VECM or VAR model
 

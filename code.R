@@ -17,8 +17,6 @@ library(quantmod)
 library(fBasics)
 library(forecast)
 
-
-
 # For better plotting
 theme_set(theme_airbnb_fancy())
 orange = "#FFB400"
@@ -30,7 +28,6 @@ options(scipen  =  10)
 Sys.setlocale("LC_ALL","English")
 
 source("functions.R")
-
 
 ###################################################
 # Data  
@@ -121,7 +118,7 @@ data <- data %>% head(-30) # So usefull
 # Stationarity
 testdf(variable = data$btc,
 	   max.augmentations = 30)
-
+# I(1) is enough
 testdf(variable = data$Dbtc,
 	   max.augmentations = 30)
 
@@ -202,6 +199,9 @@ Box.test(resid(BTC.arima510), type = "Ljung-Box", lag = 10)
 testdf(variable = data$eth,
 	   max.augmentations = 30)
 
+# I(o) would probably be ok
+# But I'll use I(1) to make things more interesting
+# And just to make sure 
 testdf(variable = data$Deth,
 	   max.augmentations = 30)
 
@@ -317,3 +317,42 @@ forecast(ETH.arima5120.small, h = 30) %>%                  # Forecast
 		text = element_text(family = "sans"), # Remove the font warnings
 		plot.title = element_text(family = "sans")
 	)
+
+
+###################################################
+# Cointegration
+###################################################
+
+# BTC and ETH are I(1)
+model.coint <- lm(btc ~ eth, 
+				  data = data)
+
+summary(model.coint)
+
+# Testing stationarity of residuals 
+# What is the proper ADF statistic? 
+
+# Looks like I(1)
+testdf(variable = residuals(model.coint), 
+	   max.augmentations = 3)
+
+# Add the lagged residuals
+data$lresid <- lag.xts(residuals(model.coint))
+
+
+model.ecm <- lm(btc ~ eth + lresid - 1,
+				# -1 denotes a model without a constant
+				data = data) 
+
+# Looks like the are cointegrated quite nicely
+summary(model.ecm)
+
+
+# Both tests are significant
+grangertest(btc ~ eth, 
+			data = data,
+			order = 5) 
+
+grangertest(eth ~ btc, 
+			data = data,
+			order = 5)

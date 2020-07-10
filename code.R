@@ -16,6 +16,7 @@ library(fUnitRoots)
 library(quantmod)
 library(fBasics)
 library(forecast)
+library(vars)
 
 # For better plotting
 theme_set(theme_airbnb_fancy())
@@ -356,3 +357,82 @@ grangertest(btc ~ eth,
 grangertest(eth ~ btc, 
 			data = data,
 			order = 5)
+
+
+
+
+
+###################################################
+# VAR model
+###################################################
+
+# Lets proceed with 7
+VARselect(data[ , c('btc', 'eth')], # input data for VAR
+		  lag.max = 10)     # maximum lag
+
+var.model <- VAR(data[ , c('btc', 'eth')], p = 7)
+
+summary(var.model)
+
+# On the verge of significance on the PACF
+plot(var.model)
+
+# On the verge of significance
+serial.test(var.model)
+
+# Not significant
+serial.test(var.model, type = "BG")
+
+
+# BTC has much stronger impact (maybe due to the diff in the values) 
+plot( irf(var.model,
+		  n.ahead = 36) )
+plot( fevd(var.model,
+		   n.ahead = 36))
+
+
+###################################################
+# VAR forecasting
+###################################################
+
+# Forecast for 30 days
+var.forecast <- predict(var.model, n.ahead = 30, ci = 0.95) 
+
+# Bitcoin
+var.forecast[["fcst"]][["btc"]] %>%
+	as.data.frame() %>%
+	dplyr::select(f_mean = fcst,
+		   		  f_lower = lower,
+		          f_upper = upper) %>%
+	cbind(data_test) %>%                                   # Add the real data
+	ggplot(aes(x = date)) +                                # Plot
+	geom_line(aes(y = btc), color = purple) +
+	geom_line(aes(y = f_mean), color = orange) +
+	geom_line(aes(y = f_lower), color = 'red') +
+	geom_line(aes(y = f_upper), color = 'red') +
+	labs(title = "30 day prediction of BTC",
+		 subtitle = 'Yellow is the prediction') +
+	theme(
+		text = element_text(family = "sans"), # Remove the font warnings
+		plot.title = element_text(family = "sans")
+	)
+
+# Etherium
+var.forecast[["fcst"]][["eth"]] %>%
+	as.data.frame() %>%
+	dplyr::select(f_mean = fcst,
+				  f_lower = lower,
+				  f_upper = upper) %>%
+	cbind(data_test) %>%                                   # Add the real data
+	ggplot(aes(x = date)) +                                # Plot
+	geom_line(aes(y = eth), color = purple) +
+	geom_line(aes(y = f_mean), color = orange) +
+	geom_line(aes(y = f_lower), color = 'red') +
+	geom_line(aes(y = f_upper), color = 'red') +
+	labs(title = "30 day prediction of ETH",
+		 subtitle = 'Yellow is the prediction') +
+	theme(
+		text = element_text(family = "sans"), # Remove the font warnings
+		plot.title = element_text(family = "sans")
+	)
+

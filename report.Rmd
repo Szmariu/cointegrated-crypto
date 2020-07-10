@@ -26,6 +26,16 @@ library(ggplot2) # nice plots
 library(ggthemes) 
 library(ggtech) # For the airbnb theme
 
+library(xts)
+library(lmtest)
+library(tseries)
+library(urca)
+library(fUnitRoots)
+library(quantmod)
+library(fBasics)
+library(forecast)
+library(vars)
+
 # For better plotting
 theme_set(theme_airbnb_fancy())
 orange = "#FFB400"
@@ -385,12 +395,165 @@ grangertest(eth ~ btc,
 
 
 
-# VECM or VAR model
+# VAR model
 
-# Forecasting ^
+```{r }
+VARselect(data[ , c('btc', 'eth')], # input data for VAR
+		  lag.max = 10)     # maximum lag
+```
+
+```{r }
+var.model <- VAR(data[ , c('btc', 'eth')], p = 7)
+summary(var.model)
+```
+
+```{r }
+plot(var.model)
+```
+
+```{r }
+serial.test(var.model)
+```
+
+```{r }
+serial.test(var.model, type = "BG")
+```
+
+```{r }
+plot( irf(var.model,
+		  n.ahead = 36) )
+```
+
+```{r }
+plot( fevd(var.model,
+		   n.ahead = 36))
+```
+
+# Forecasting VAR
+
+```{r }
+# Forecast for 30 days
+var.forecast <- predict(var.model, n.ahead = 30, ci = 0.95) 
+
+# Bitcoin
+var.forecast[["fcst"]][["btc"]] %>%
+	as.data.frame() %>%
+	dplyr::select(f_mean = fcst,
+		   		  f_lower = lower,
+		          f_upper = upper) %>%
+	cbind(data_test) %>%                                   # Add the real data
+	ggplot(aes(x = date)) +                                # Plot
+	geom_line(aes(y = btc), color = purple) +
+	geom_line(aes(y = f_mean), color = orange) +
+	geom_line(aes(y = f_lower), color = 'red') +
+	geom_line(aes(y = f_upper), color = 'red') +
+	labs(title = "30 day prediction of BTC",
+		 subtitle = 'Yellow is the prediction') +
+	theme(
+		text = element_text(family = "sans"), # Remove the font warnings
+		plot.title = element_text(family = "sans")
+	)
+```
+
+```{r }
+var.forecast[["fcst"]][["eth"]] %>%
+	as.data.frame() %>%
+	dplyr::select(f_mean = fcst,
+				  f_lower = lower,
+				  f_upper = upper) %>%
+	cbind(data_test) %>%                                   # Add the real data
+	ggplot(aes(x = date)) +                                # Plot
+	geom_line(aes(y = eth), color = purple) +
+	geom_line(aes(y = f_mean), color = orange) +
+	geom_line(aes(y = f_lower), color = 'red') +
+	geom_line(aes(y = f_upper), color = 'red') +
+	labs(title = "30 day prediction of ETH",
+		 subtitle = 'Yellow is the prediction') +
+	theme(
+		text = element_text(family = "sans"), # Remove the font warnings
+		plot.title = element_text(family = "sans")
+	)
+```
+
+```{r }
+
+```
+
+```{r }
+
+```
+
+```{r }
+
+```
+
+```{r }
+
+```
+
+```{r }
+
+```
+
+```{r }
+
+```
+
+```{r }
+
+```
+
+```{r }
+
+```
+
+```{r }
+
+```
+
+```{r }
+
+```
+
+# Forecast comparison
+
+```{r }
+
+```
+
+```{r }
+
+```
+
+```{r }
+
+```
+
+```{r }
+
+```
+
+```{r }
+
+```
+
+```{r }
+
+```
+
+```{r }
+
+```
+
 
 # Conclusion
 
 ```{r }
 
 ```
+
+```{r }
+
+```
+
+

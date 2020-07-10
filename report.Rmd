@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
 This study tries to create optimal models for predicting Bitcoin and Etherum
 prices by creating optimized ARIMA models, testing currency cointegration 
 and finally creating a VAR model.
-
+\newpage
 # Data
 
 ```{R libraries, message = FALSE, warning = FALSE, error = FALSE}
@@ -148,21 +148,29 @@ data_test <- data %>% tail(30)
 data <- data %>% head(-30) # So usefull
 ```
 
-
+\newpage
 # ARIMA
 ## Bitcoin
 
+BG test signifies a autocorrelation of order 1, so 
+at least one augmentation is needed.
 
 ```{r }
 testdf(variable = data$btc,
 	   max.augmentations = 5)
 ```
 
+After differencing, all BG tests are insignificant. This 
+means that the price of Bitcoin is a I(1) process. 
 
 ```{r }
 testdf(variable = data$Dbtc,
 	   max.augmentations = 5)
 ```
+
+Some lags seem to be on the verge of beeing significant. Thanks to the
+power of modern PC, running *auto.arima* on max parameters of (240, 1, 240) 
+takes only a minute. 
 
 ```{r plot_arima_btc}
 par(mfrow = c(2, 1)) 
@@ -179,6 +187,8 @@ pacf(data$Dbtc,
 par(mfrow = c(1, 1))
 ```
 
+This is the final ARIMA(20, 1, 0) model, estimated after auto.arima 
+and iterative removal of insignificant variables.  
 
 ```{r armia_btc}
 BTC.arima2010.small <- Arima(data$btc,  
@@ -193,18 +203,17 @@ BTC.arima2010.small <- Arima(data$btc,
 								NA # 20
 							)
 )
-```
-
-
-```{r }
 coeftest(BTC.arima2010.small)
 ```
 
+The residuals have a mean of zero, but the vairance is not
+const. This is due to the changes in vairance of the 
+underlying variable.   
 
-```{r }
+```{r fig.height = 7}
 plot(resid(BTC.arima2010.small))
 ```
-
+Nothing is significant - good. 
 
 ```{r double_plot_arima}
 par(mfrow = c(2, 1)) 
@@ -221,22 +230,34 @@ par(mfrow = c(1, 1))
 
 ```
 
+BJ test confirms that the residuals are not autocorrelated. 
 
 ```{r }
 Box.test(resid(BTC.arima2010.small), type = "Ljung-Box", lag = 10)
 ```
 
+\newpage
+
 ## Etherium
+
+Jugding by the BG test, Etherium prices are a I(1) process, so one 
+augmentation should be enough.
 
 ```{r }
 testdf(variable = data$eth,
 	   max.augmentations = 5)
 ```
 
+Testing the variable differenced onec confirms this. BG is not 
+significant here for 0 augmentations, which means that there is 
+no autocorrelation in the variable.
+
 ```{r }
 testdf(variable = data$Deth,
 	   max.augmentations = 5)
 ```
+
+Some lags seem to be significant, so *auto.arima* was run on max parameters of (240, 1, 240).
 
 ```{r plot_arima_eth}
 par(mfrow = c(2, 1)) 
@@ -252,6 +273,9 @@ pacf(data$Deth,
 	 col = orange)
 par(mfrow = c(1, 1)) 
 ```
+
+This is the final model, taken form auto.arima, with insignificant 
+variables iteratively removed. It is ARIMA(5, 1, 20).
 
 ```{r arima_eth}
 ETH.arima5120.small <- Arima(data$eth,  
@@ -275,9 +299,16 @@ ETH.arima5120.small <- Arima(data$eth,
 coeftest(ETH.arima5120.small)
 ```
 
-```{r }
+Residuals have mean of 0, but they are not stationary 
+because the variance changes. This is due to the original data that 
+has significant spikes in pric in some places, so nothing really can be done 
+about it.   
+
+```{r fig.height = 6}
 plot(resid(ETH.arima5120.small))
 ```
+
+Everything is insignificant, on on the verge os significance, which is good news.   
 
 ```{r double_plot_eth}
 par(mfrow = c(2, 1)) 
@@ -294,12 +325,21 @@ par(mfrow = c(1, 1))
 
 ```
 
+BJ test confirms that the residuals are not in fact
+autocerrelated. 
+
 ```{r }
 Box.test(resid(ETH.arima5120.small), type = "Ljung-Box", lag = 10)
 ```
 
-
+\newpage
 # ARIMA forecasting
+
+30 day ARIMA forecast for the Bitcoin is close to the real values,
+aldought it seems to overestimate the price and ignore the 
+downward trend present in the data. 
+Becaues the price is so stable, the precistion looks kind of 
+like a naive prediction.    
 
 ```{r arima_forecast_btc}
 forecast(BTC.arima2010.small, h = 30) %>%                  # Forecast
@@ -320,6 +360,10 @@ forecast(BTC.arima2010.small, h = 30) %>%                  # Forecast
 		)
 ```
 
+Simmilar results for Etherium - aldought here it seems that 
+the model was able to predict the general downward trend.
+It can be said that it predicted it too much.    
+
 ```{r arima_forecast_eth}
 forecast(ETH.arima5120.small, h = 30) %>%                  # Forecast
 	{data.frame(f_mean  = as.numeric(.$mean),              # Make into a DF
@@ -338,7 +382,7 @@ forecast(ETH.arima5120.small, h = 30) %>%                  # Forecast
 		plot.title = element_text(family = "sans")
 	)
 ```
-
+\newpage
 # Cointegration testing
 
 Since Bitcoin and Etherium are both integrated of 
@@ -402,7 +446,7 @@ grangertest(eth ~ btc,
 ```
 
 
-
+\newpage
 # VAR model
 *VARselect* function is very usefull when searching for the right number of lags in the VAR model.
 Here, the optimal number seem to be 7 lags, based on AIC and FPE. Could also be 1, 
@@ -435,6 +479,8 @@ are not autocorrelated.
 ```{r }
 serial.test(var.model, type = "BG")
 ```
+
+\newpage
 
 # Forecasting VAR
 The 30 day forecast for Bitcoin using the VAR model is very close to 
@@ -490,6 +536,8 @@ var.forecast[["fcst"]][["eth"]] %>%
 		plot.title = element_text(family = "sans")
 	)
 ```
+
+\newpage
 
 # Forecast comparison
 

@@ -14,7 +14,7 @@ knitr::opts_chunk$set(cache = TRUE)
 # Aim of the study
 This study tries to create optimal models for predicting Bitcoin and Etherum
 prices by creating optimized ARIMA models, testing currency cointegration 
-and finally creating a VECM (VAR) model.
+and finally creating a VAR model.
 
 # Data
 
@@ -35,6 +35,7 @@ library(quantmod)
 library(fBasics)
 library(forecast)
 library(vars)
+library(Metrics)
 
 # For better plotting
 theme_set(theme_airbnb_fancy())
@@ -475,85 +476,47 @@ var.forecast[["fcst"]][["eth"]] %>%
 	)
 ```
 
-```{r }
-
-```
-
-```{r }
-
-```
-
-```{r }
-
-```
-
-```{r }
-
-```
-
-```{r }
-
-```
-
-```{r }
-
-```
-
-```{r }
-
-```
-
-```{r }
-
-```
-
-```{r }
-
-```
-
-```{r }
-
-```
-
 # Forecast comparison
 
 ```{r }
+forecast.arima.btc <- forecast(BTC.arima2010.small, h = 30) %>% 
+	.$mean %>%
+	as.vector()
 
-```
+forecast.arima.eth <- forecast(ETH.arima5120.small, h = 30) %>% 
+	.$mean %>%
+	as.vector()
 
-```{r }
+forecast.var.btc <- var.forecast[["fcst"]][["btc"]] %>%
+	as.data.frame() %>%
+	.$fcst
 
-```
+forecast.var.eth <- var.forecast[["fcst"]][["eth"]] %>%
+	as.data.frame() %>%
+	.$fcst
 
-```{r }
+forecast.comparison <- data.frame(
+	btc_real = data_test$btc,
+	btc_arima = forecast.arima.btc,
+	btc_var = forecast.var.btc,
+	eth_real = data_test$eth,
+	eth_arima = forecast.arima.eth,
+	eth_var = forecast.var.eth
+)
 
-```
-
-```{r }
-
-```
-
-```{r }
-
-```
-
-```{r }
-
-```
-
-```{r }
-
+data.frame(
+	ARIMA_BTC = smape(forecast.comparison$btc_real, forecast.comparison$btc_arima),
+	ARIMA_ETH = smape(forecast.comparison$eth_real, forecast.comparison$eth_arima),
+	VAR_BTC   = smape(forecast.comparison$btc_real, forecast.comparison$btc_var),
+	VAR_ETH   = smape(forecast.comparison$eth_real, forecast.comparison$eth_var)
+)
 ```
 
 
 # Conclusion
 
-```{r }
 
-```
 
-```{r }
 
-```
 
 

@@ -17,6 +17,7 @@ library(quantmod)
 library(fBasics)
 library(forecast)
 library(vars)
+library(Metrics)
 
 # For better plotting
 theme_set(theme_airbnb_fancy())
@@ -435,4 +436,55 @@ var.forecast[["fcst"]][["eth"]] %>%
 		text = element_text(family = "sans"), # Remove the font warnings
 		plot.title = element_text(family = "sans")
 	)
+
+
+###################################################
+# Forecast comparison
+###################################################
+
+# Arima 
+# Bitcoin
+forecast.arima.btc <- forecast(BTC.arima2010.small, h = 30) %>% 
+	.$mean %>%
+	as.vector()
+
+# Etherium
+forecast.arima.eth <- forecast(ETH.arima5120.small, h = 30) %>% 
+	.$mean %>%
+	as.vector()
+
+# VAR
+# Bitcoin
+forecast.var.btc <- var.forecast[["fcst"]][["btc"]] %>%
+	as.data.frame() %>%
+	.$fcst
+
+
+# Etherium
+forecast.var.eth <- var.forecast[["fcst"]][["eth"]] %>%
+	as.data.frame() %>%
+	.$fcst
+
+forecast.comparison <- data.frame(
+	btc_real = data_test$btc,
+	btc_arima = forecast.arima.btc,
+	btc_var = forecast.var.btc,
+	eth_real = data_test$eth,
+	eth_arima = forecast.arima.eth,
+	eth_var = forecast.var.eth
+)
+
+data.frame(
+	ARIMA_BTC = smape(forecast.comparison$btc_real, forecast.comparison$btc_arima),
+	ARIMA_ETH = smape(forecast.comparison$eth_real, forecast.comparison$eth_arima),
+	VAR_BTC   = smape(forecast.comparison$btc_real, forecast.comparison$btc_var),
+	VAR_ETH   = smape(forecast.comparison$eth_real, forecast.comparison$eth_var)
+)
+
+
+
+
+
+
+
 

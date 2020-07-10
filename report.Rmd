@@ -18,10 +18,22 @@ knitr::opts_chunk$set(
 
 # Aim of the study
 This study tries to create optimal models for predicting Bitcoin and Etherum
-prices by creating optimized ARIMA models, testing currency cointegration 
-and finally creating a VAR model.
-\newpage
+prices by testing currency cointegration and creating optimized ARIMA and VAR models.
+
 # Data
+
+This study will be conducted on the daily closing prices of two crytpocurrencies - 
+Bitcoin and Etherium. Bitcoin was choosen because it is a dominant force on the market, 
+Etherium was choosen because it seems to follow Bitcoin price very closely.   
+
+The dates are from 2019-01-01 to today. This gives enought data to estimate the models,
+while at the same time reomves the one-of-a-kind huge price surge that happened in 
+2018.   
+
+Out of sample period for estimation was choosen to be 30 days. It should be enough
+to test the models, but not too long as to give increased errors.   
+
+The data structure is as follows. It was downloaded from coinmarketcap.com and saved into csv files.   
 
 ```{R libraries, message = FALSE, warning = FALSE, error = FALSE}
 ### Preparation
@@ -55,19 +67,12 @@ btc <- read_csv('data/btc.csv')
 eth <- read_csv('data/eth.csv')
 
 source("functions.R")
-```
 
-```{r data_download}
 btc %>% tail
 ```
 
-```{r }
-summary(btc)
-```
-
-```{r }
-summary(eth)
-```
+The Bitcoin plot looks like this. Significant changes in price in both directions with no 
+visible trend, but nothing like 2018.   
 
 ```{r plot_btc}
 btc %>%
@@ -80,6 +85,9 @@ btc %>%
 	)
 ```
 
+The Etherium plot looks very simmilar to Bitcoin, aldought 
+it seems to have slightly higher variance.   
+
 ```{r plot_eth}
 eth %>%
 	ggplot(aes(Date, Close)) +
@@ -90,6 +98,10 @@ eth %>%
 		plot.title = element_text(family = "sans")
 	)
 ```
+
+Plotting both prices as % of a max price confirms this. 
+Etherium reacts to changes stronger than Bitcoin. They do hovever 
+seem very cointgrated. 
 
 ```{r plot_both}
 btc$source <- 'Bitcoin'
@@ -112,6 +124,10 @@ bind_rows(btc, eth) %>%
 	)
 ```
 
+This is the same plot, but as a difference beetween prices. 
+As it can be seen, when the change is very short and strong, 
+the prices move like one. This could be a result of automated 
+trading, but more indepth research would be required.   
 
 ```{r plot_both_2}
 bind_rows(btc, eth) %>%

@@ -221,7 +221,7 @@ par(mfrow = c(1, 1))
 
 # Gotta use the 6 core processor on something
 # Also (5,1,0) 
-auto.arima(data$Deth,
+auto.arima(data$eth,
 		   d = 1,
 		   max.p = 240,
 		   max.q = 240,
@@ -230,59 +230,52 @@ auto.arima(data$Deth,
 		   num.cores = 12)
 
 # But let's try something bigger
-ETH.arima20110 <- Arima(data$eth,  
-					   order = c(20, 1, 10)  
+ETH.arima5120 <- Arima(data$eth,  
+					   order = c(5, 1, 20)  
 )
 
 # Many are significant
-coeftest(ETH.arima20110)
+coeftest(ETH.arima5120)
 
-# Let's estimate it with only the significant ones
-ETH.arima20110.small <- Arima(data$Deth,  
-							 order = c(20, 1, 10),
-							 fixed = c(
-							 	0, #1
-							 	rep(0, 2),
-							 	0, #4
-							 	0, #5
-							 	rep(0, 4),
-							 	0, #10
-							 	rep(0, 9),
-							 	NA, # 20
-							 	NA,    # MA #1
-							 	NA,
-							 	0,
-							 	NA,
-							 	NA,
-							 	0,
-							 	0,
-							 	0,
-							 	0,
-							 	0
-							 )
+# Make the smaller model
+ETH.arima5120.small <- Arima(data$eth,  
+							order = c(5, 1, 20),
+							fixed = c(
+								rep(0,3),
+								NA,
+								NA,
+								rep(0, 3),
+								NA,
+								NA,
+								rep(0, 3),
+								NA,
+								0,
+								0,
+								rep(0, 8),
+								NA
+							)
 )
 
-# All significant
-coeftest(ETH.arima20110.small)
+coeftest(ETH.arima5120.small)
 
 # Plot resudials
-plot(resid(ETH.arima20110.small))
+plot(resid(ETH.arima5120.small))
 
-# No significant!
+# Some are on the verge, but it's ok
 par(mfrow = c(2, 1)) 
-acf(resid(ETH.arima20110.small), 
+acf(resid(ETH.arima5120.small), 
 	lag.max = 36,
 	ylim = c(-0.1, 0.1), 
 	lwd = 5, col = orange,
 	na.action = na.pass)
-pacf(resid(ETH.arima20110.small), 
+pacf(resid(ETH.arima5120.small), 
 	 lag.max = 36, 
 	 lwd = 5, col = orange,
 	 na.action = na.pass)
 par(mfrow = c(1, 1))
 
 # Residuals are not correlated
-Box.test(resid(ETH.arima20110.small), type = "Ljung-Box", lag = 10)
+Box.test(resid(ETH.arima5120.small), type = "Ljung-Box", lag = 10)
 
 
 ###################################################
@@ -308,7 +301,7 @@ forecast(BTC.arima2010.small, h = 30) %>%                  # Forecast
 		)
 
 # Etherium
-forecast(ETH.arima2010.small, h = 30) %>%                  # Forecast
+forecast(ETH.arima5120.small, h = 30) %>%                  # Forecast
 	{data.frame(f_mean  = as.numeric(.$mean),              # Make into a DF
 				f_lower = as.numeric(.$lower[, 2]),
 				f_upper = as.numeric(.$upper[, 2]))} %>%

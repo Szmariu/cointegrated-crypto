@@ -237,12 +237,10 @@ testdf(variable = data$eth,
 	   max.augmentations = 30)
 ```
 
-
 ```{r }
 testdf(variable = data$Deth,
 	   max.augmentations = 30)
 ```
-
 
 ```{r }
 par(mfrow = c(2, 1)) 
@@ -260,82 +258,89 @@ par(mfrow = c(1, 1))
 ```
 
 ```{r }
-# Let's estimate it with only the significant ones
-ETH.arima20110.small <- Arima(data$Deth,  
-							 order = c(20, 1, 10),
-							 fixed = c(
-							 	0, #1
-							 	rep(0, 2),
-							 	0, #4
-							 	0, #5
-							 	rep(0, 4),
-							 	0, #10
-							 	rep(0, 9),
-							 	NA, # 20
-							 	NA,    # MA #1
-							 	NA,
-							 	0,
-							 	NA,
-							 	NA,
-							 	0,
-							 	0,
-							 	0,
-							 	0,
-							 	0
-							 )
+ETH.arima5120.small <- Arima(data$eth,  
+							order = c(5, 1, 20),
+							fixed = c(
+								rep(0,3),
+								NA,
+								NA,
+								rep(0, 3),
+								NA,
+								NA,
+								rep(0, 3),
+								NA,
+								0,
+								0,
+								rep(0, 8),
+								NA
+							)
 )
+
+coeftest(ETH.arima5120.small)
 ```
 
 ```{r }
-coeftest(ETH.arima20110.small)
+plot(resid(ETH.arima5120.small))
 ```
-
-
-```{r }
-plot(resid(ETH.arima20110.small))
-
-```
-
 
 ```{r }
 par(mfrow = c(2, 1)) 
-acf(resid(ETH.arima20110.small), 
+acf(resid(ETH.arima5120.small), 
 	lag.max = 36,
 	ylim = c(-0.1, 0.1), 
 	lwd = 5, col = orange,
 	na.action = na.pass)
-pacf(resid(ETH.arima20110.small), 
+pacf(resid(ETH.arima5120.small), 
 	 lag.max = 36, 
 	 lwd = 5, col = orange,
 	 na.action = na.pass)
 par(mfrow = c(1, 1))
-```
 
+```
 
 ```{r }
-Box.test(resid(ETH.arima20110.small), type = "Ljung-Box", lag = 10)
+Box.test(resid(ETH.arima5120.small), type = "Ljung-Box", lag = 10)
 ```
-
-
-```{r }
-
-```
-
-
-```{r }
-
-```
-
 
 
 # ARIMA forecasting
 
 ```{r }
-
+forecast(BTC.arima2010.small, h = 30) %>%                  # Forecast
+	{data.frame(f_mean  = as.numeric(.$mean),              # Make into a DF
+			   f_lower = as.numeric(.$lower[, 2]),
+			   f_upper = as.numeric(.$upper[, 2]))} %>%
+	cbind(data_test) %>%                                   # Add the real data
+	ggplot(aes(x = date)) +                                # Plot
+		geom_line(aes(y = btc), color = purple) +
+		geom_line(aes(y = f_mean), color = orange) +
+		geom_line(aes(y = f_lower), color = 'red') +
+		geom_line(aes(y = f_upper), color = 'red') +
+		labs(title = "30 day prediction of BTC",
+			 subtitle = 'Yellow is the prediction') +
+		theme(
+			text = element_text(family = "sans"), # Remove the font warnings
+			plot.title = element_text(family = "sans")
+		)
 ```
 
 ```{r }
-
+forecast(ETH.arima5120.small, h = 30) %>%                  # Forecast
+	{data.frame(f_mean  = as.numeric(.$mean),              # Make into a DF
+				f_lower = as.numeric(.$lower[, 2]),
+				f_upper = as.numeric(.$upper[, 2]))} %>%
+	cbind(data_test) %>%                                   # Add the real data
+	ggplot(aes(x = date)) +                                # Plot
+	geom_line(aes(y = eth), color = purple) +
+	geom_line(aes(y = f_mean), color = orange) +
+	geom_line(aes(y = f_lower), color = 'red') +
+	geom_line(aes(y = f_upper), color = 'red') +
+	labs(title = "30 day prediction of ETH",
+		 subtitle = 'Yellow is the prediction') +
+	theme(
+		text = element_text(family = "sans"), # Remove the font warnings
+		plot.title = element_text(family = "sans")
+	)
 ```
 
 

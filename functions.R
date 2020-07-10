@@ -63,7 +63,5 @@ testdf <- function(variable, max.augmentations)
 	
 	row.names(results_adf) <- NULL
 	
-	plot(variable, type = "l", col = "darkblue", lwd = 2, main = "Plot of the examined variable")
-	
 	return(results_adf)
 }	

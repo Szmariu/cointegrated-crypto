@@ -1,5 +1,5 @@
 ---
-title: "Predicting Bitcoin and Etherium prices"
+title: "Predicting Bitcoin and Etherium prices using ARIMA and VAR"
 author: "Michał Szałanski"
 output: pdf_document
 ---
@@ -18,8 +18,8 @@ knitr::opts_chunk$set(
 For predicting Bitcoin and Etherium prices both ARIMA and VAR models 
 seem to be good choices. ARIMA was slightly weaker with sMAPE of
 *4.3%*, compared to *3.4%* achieved by the VAR model. It was observed 
-that for the examined period of time, Bitcoin and Etherium close
-prices are cointegrated. 
+that, for the examined period of time, the Bitcoin and Etherium 
+prices were cointegrated. 
 
 
 # Aim of the study
@@ -79,8 +79,8 @@ btc %>% tail
 
 \newpage
 
-The Bitcoin plot looks like this. Significant changes in price in both directions with no 
-visible trend, but nothing like 2018.   
+Bitcoin prices exhibit significant changes in price in both directions, with no 
+visible trend. None of the changes come close to these observed in 2018.   
 
 ```{r plot_btc}
 btc %>%
@@ -93,8 +93,8 @@ btc %>%
 	)
 ```
 
-The Etherium plot looks very similar to Bitcoin, although 
-it seems to have slightly higher variance.   
+Etherium prices looks very similar to Bitcoin, although 
+they seem to have slightly higher variance.   
 
 ```{r plot_eth}
 eth %>%
@@ -135,7 +135,7 @@ bind_rows(btc, eth) %>%
 ```
 
 This is the same plot, but as a difference between prices. 
-As it can be seen, when the change is very short and strong, 
+As it can be seen, when the change is very short and strong (e.g. around 2020-03), 
 the prices move like one. This could be a result of automated 
 trading, but more in-depth research would be required.   
 
@@ -175,10 +175,9 @@ data <- data %>% head(-30) # So usefull
 ```
 
 \newpage
-# ARIMA
-## Bitcoin
+# ARIMA - Bitcoin
 
-BG test signifies a autocorrelation of order 1, so 
+Breusch–Godfrey test signifies a autocorrelation of order 1, so 
 at least one augmentation is needed.
 
 ```{r }
@@ -186,7 +185,7 @@ testdf(variable = data$btc,
 	   max.augmentations = 5)
 ```
 
-After differencing, all BG tests are insignificant. This 
+After differencing, all Breusch–Godfrey tests are insignificant. This 
 means that the price of Bitcoin is a I(1) process. 
 
 ```{r }
@@ -213,6 +212,8 @@ pacf(data$Dbtc,
 par(mfrow = c(1, 1))
 ```
 
+\newpage
+
 This is the final ARIMA(20, 1, 0) model, estimated after auto.arima 
 and iterative removal of insignificant variables.  
 
@@ -233,15 +234,16 @@ coeftest(BTC.arima2010.small)
 ```
 
 The residuals have a mean of zero, but the variance is not
-const. This is due to the changes in variance of the 
+constant. This is due to the changes in variance of the 
 underlying variable.   
 
-```{r fig.height = 7}
+```{r fig.height = 6}
 plot(resid(BTC.arima2010.small))
 ```
-Nothing is significant - good. 
+Nothing is significant, which means that the 
+residuals are not autocorrelated.
 
-```{r double_plot_arima}
+```{r double_plot_arima, fig.height = 8}
 par(mfrow = c(2, 1)) 
 acf(resid(BTC.arima2010.small), 
 	lag.max = 36,
@@ -256,6 +258,8 @@ par(mfrow = c(1, 1))
 
 ```
 
+\newpage
+
 BJ test confirms that the residuals are not autocorrelated. 
 
 ```{r }
@@ -264,9 +268,9 @@ Box.test(resid(BTC.arima2010.small), type = "Ljung-Box", lag = 10)
 
 \newpage
 
-## Etherium
+# ARIMA - Etherium
 
-Judging by the BG test, Etherium prices are a I(1) process, so one 
+Judging by the Breusch–Godfrey test, Etherium prices are a I(1) process, so one 
 augmentation should be enough.
 
 ```{r }
@@ -274,9 +278,9 @@ testdf(variable = data$eth,
 	   max.augmentations = 5)
 ```
 
-Testing the variable differenced once confirms this. BG is not 
+Testing the variable differenced once confirms this. Breusch–Godfrey is not 
 significant here for 0 augmentations, which means that there is 
-no autocorrelation in the variable.
+no autocorrelation in the new variable.
 
 ```{r }
 testdf(variable = data$Deth,
@@ -299,6 +303,8 @@ pacf(data$Deth,
 	 col = orange)
 par(mfrow = c(1, 1)) 
 ```
+
+\newpage
 
 This is the final model, taken form auto.arima, with insignificant 
 variables iteratively removed. It is ARIMA(5, 1, 20).
@@ -325,18 +331,18 @@ ETH.arima5120.small <- Arima(data$eth,
 coeftest(ETH.arima5120.small)
 ```
 
-Residuals have mean of 0, but they are not stationary 
-because the variance changes. This is due to the original data that 
-has significant spikes in price in some places, so nothing really can be done 
+Residuals have a mean of 0, but they are not stationary. 
+This is because of the changes in variance. This is due to the original data that 
+has significant spikes in price in some places, so nothing more can be done 
 about it.   
 
 ```{r fig.height = 6}
 plot(resid(ETH.arima5120.small))
 ```
 
-Everything is insignificant, on on the verge of significance, which is good news.   
+Everything is insignificant, or on the verge of significance, which is good news.   
 
-```{r double_plot_eth}
+```{r double_plot_eth, fig.height = 7}
 par(mfrow = c(2, 1)) 
 acf(resid(ETH.arima5120.small), 
 	lag.max = 36,
@@ -351,7 +357,7 @@ par(mfrow = c(1, 1))
 
 ```
 
-BJ test confirms that the residuals are not in fact
+Box-Ljung test confirms that the residuals are not in fact
 autocorrelated. 
 
 ```{r }
@@ -364,7 +370,7 @@ Box.test(resid(ETH.arima5120.small), type = "Ljung-Box", lag = 10)
 30 day ARIMA forecast for the Bitcoin is close to the real values,
 although it seems to overestimate the price and ignore the 
 downward trend present in the data. 
-Because the price is so stable, the prediction looks kind of 
+Because the price is so stable, the predicted values looks kind of 
 like a naive prediction.    
 
 ```{r arima_forecast_btc}
@@ -408,7 +414,8 @@ forecast(ETH.arima5120.small, h = 30) %>%                  # Forecast
 		plot.title = element_text(family = "sans")
 	)
 ```
-\newpage
+
+
 # Cointegration testing
 
 Since Bitcoin and Etherium are both integrated of 
@@ -418,7 +425,7 @@ To test this cointegration, a simple
 linear model can be estimated. The coefficient for eth 
 is very significant, which means that they are in fact cointegrated.    
 
-It seems that a increase in price of ETH by 1 USD means 
+It seems that a increase in price of ETH by 1 USD means an
 increase of BTC price by around 37 USD.    
 
 ```{r lm}
@@ -440,11 +447,10 @@ testdf(variable = residuals(model.coint),
 
 ```
 
-The inclusion of lagged residuals seem to be a good
-decision. The coefficient is significant, which 
+The inclusion of lagged residuals seem to help. The coefficient is significant, which 
 hints that there is a long term relationship
 between this variables in addition to the short term one
-(indicated by the eth).   
+(indicated by eth).   
 
 ```{r better_lm}
 data$lresid <- lag.xts(residuals(model.coint))
@@ -453,7 +459,7 @@ model.ecm <- lm(btc ~ eth + lresid,
 summary(model.ecm)
 ```
 
-Granger test confirms that for 5 lags, there exist a 
+Granger test confirms that, for 5 lags, there exist a 
 Granger Causality eth -> btc.   
 
 ```{r }
@@ -568,16 +574,16 @@ var.forecast[["fcst"]][["eth"]] %>%
 # Forecast comparison
 
 Metric used here is sMAPE, Symmetric Mean Absolute Percentage Error. 
-It was chosen, because it is unit indifferent and it calculates 
+It was chosen because it is unit indifferent and it calculates 
 negative errors with the same weight as the positive ones.     
 
 The results are good, sMAPE of *4.3%* for ARIMA and *3.4%* for
-VAR are very solid. It can be seen, that is this situation 
-the VAR model performed significantly better then ARIMA.   
+VAR are very solid. It can be seen that for this data, 
+the VAR model performed significantly better than ARIMA.   
 
 The differences between BTC and ETH within both models 
 were insignificant, which hints that these type of models 
-could be used with other crypto currencies. 
+could be used with other cryptocurrencies. 
 
 ```{r forecast_comparison}
 forecast.arima.btc <- forecast(BTC.arima2010.small, h = 30) %>% 

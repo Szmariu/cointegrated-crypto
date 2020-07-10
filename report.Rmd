@@ -129,6 +129,28 @@ bind_rows(btc, eth) %>%
 	)
 ```
 
+```{r }
+data <- data.frame(
+	date = btc$Date,
+	btc  = btc$Close,
+	eth  = eth$Close
+)
+
+remove(btc)
+remove(eth)  
+
+data$Dbtc <- diff.xts(data$btc)
+data$Deth <- diff.xts(data$eth)
+
+# Drop the first row with NAs
+data <- data %>% drop_na()
+
+# Extract last 30 days for predictions
+data_test <- data %>% tail(30)
+
+# Remove them to avoid look ahead bias
+data <- data %>% head(-30) # So usefull
+```
 
 
 # ARIMA
@@ -237,37 +259,52 @@ pacf(data$Deth,
 par(mfrow = c(1, 1)) 
 ```
 
-
 ```{r }
-ETC.arima2010.small <- Arima(data$btc,  
-							 order = c(20, 1, 0),
+# Let's estimate it with only the significant ones
+ETH.arima20110.small <- Arima(data$Deth,  
+							 order = c(20, 1, 10),
 							 fixed = c(
-							 	NA, #1
-							 	rep(0, 18),
-							 	NA # 20
+							 	0, #1
+							 	rep(0, 2),
+							 	0, #4
+							 	0, #5
+							 	rep(0, 4),
+							 	0, #10
+							 	rep(0, 9),
+							 	NA, # 20
+							 	NA,    # MA #1
+							 	NA,
+							 	0,
+							 	NA,
+							 	NA,
+							 	0,
+							 	0,
+							 	0,
+							 	0,
+							 	0
 							 )
 )
 ```
 
-
 ```{r }
-coeftest(ETC.arima2010.small)
+coeftest(ETH.arima20110.small)
 ```
 
 
 ```{r }
-plot(resid(ETC.arima2010.small))
+plot(resid(ETH.arima20110.small))
+
 ```
 
 
 ```{r }
 par(mfrow = c(2, 1)) 
-acf(resid(ETC.arima2010.small), 
+acf(resid(ETH.arima20110.small), 
 	lag.max = 36,
 	ylim = c(-0.1, 0.1), 
 	lwd = 5, col = orange,
 	na.action = na.pass)
-pacf(resid(ETC.arima2010.small), 
+pacf(resid(ETH.arima20110.small), 
 	 lag.max = 36, 
 	 lwd = 5, col = orange,
 	 na.action = na.pass)
@@ -276,14 +313,63 @@ par(mfrow = c(1, 1))
 
 
 ```{r }
-Box.test(resid(BTC.arima510), type = "Ljung-Box", lag = 10)
+Box.test(resid(ETH.arima20110.small), type = "Ljung-Box", lag = 10)
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
 ```
 
 
 
-
-
 # ARIMA forecasting
+
+```{r }
+
+```
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+
 
 # Cointegration testing
 

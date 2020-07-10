@@ -100,15 +100,18 @@ data <- data.frame(
 	btc  = btc$Close,
 	eth  = eth$Close
 )
-
-remove(btc)
-remove(eth)  
-
+ 
 data$Dbtc <- diff.xts(data$btc)
 data$Deth <- diff.xts(data$eth)
 
 # Drop the first row with NAs
 data <- data %>% drop_na()
+
+# Extract last 30 days for predictions
+data_test <- data %>% tail(30)
+
+# Remove them to avoid look ahead bias
+data <- data %>% head(-30) # So usefull
 
 ###################################################
 # ARIMA
@@ -227,61 +230,97 @@ auto.arima(data$Deth,
 		   num.cores = 12)
 
 # But let's try something bigger
-ETC.arima2010 <- Arima(data$eth,  
-					   order = c(20, 1, 0)  
+ETH.arima20110 <- Arima(data$eth,  
+					   order = c(20, 1, 10)  
 )
 
-# Other are significant
-coeftest(ETC.arima2010)
+# Many are significant
+coeftest(ETH.arima20110)
 
 # Let's estimate it with only the significant ones
-ETC.arima2010.small <- Arima(data$btc,  
-							 order = c(20, 1, 0),
+ETH.arima20110.small <- Arima(data$Deth,  
+							 order = c(20, 1, 10),
 							 fixed = c(
-							 	NA, #1
+							 	0, #1
 							 	rep(0, 2),
-							 	NA, #4
-							 	NA, #5
+							 	0, #4
+							 	0, #5
 							 	rep(0, 4),
-							 	NA, #10
+							 	0, #10
 							 	rep(0, 9),
-							 	NA # 20
+							 	NA, # 20
+							 	NA,    # MA #1
+							 	NA,
+							 	0,
+							 	NA,
+							 	NA,
+							 	0,
+							 	0,
+							 	0,
+							 	0,
+							 	0
 							 )
 )
 
-# Some stopped being significant
-coeftest(ETC.arima2010.small)
-
-# New model
-ETC.arima2010.small <- Arima(data$btc,  
-							 order = c(20, 1, 0),
-							 fixed = c(
-							 	NA, #1
-							 	rep(0, 18),
-							 	NA # 20
-							 )
-)
-
-# Both significant
-coeftest(ETC.arima2010.small)
+# All significant
+coeftest(ETH.arima20110.small)
 
 # Plot resudials
-plot(resid(ETC.arima2010.small))
+plot(resid(ETH.arima20110.small))
 
-# No significance, good
+# No significant!
 par(mfrow = c(2, 1)) 
-acf(resid(ETC.arima2010.small), 
+acf(resid(ETH.arima20110.small), 
 	lag.max = 36,
 	ylim = c(-0.1, 0.1), 
 	lwd = 5, col = orange,
 	na.action = na.pass)
-pacf(resid(ETC.arima2010.small), 
+pacf(resid(ETH.arima20110.small), 
 	 lag.max = 36, 
 	 lwd = 5, col = orange,
 	 na.action = na.pass)
 par(mfrow = c(1, 1))
 
-# Residuals are definetly not correlated
-Box.test(resid(BTC.arima510), type = "Ljung-Box", lag = 10)
+# Residuals are not correlated
+Box.test(resid(ETH.arima20110.small), type = "Ljung-Box", lag = 10)
 
 
+###################################################
+# Forecasting with ARIMA
+###################################################
+
+# Bitcoin
+forecast(BTC.arima2010.small, h = 30) %>%                  # Forecast
+	{data.frame(f_mean  = as.numeric(.$mean),              # Make into a DF
+			   f_lower = as.numeric(.$lower[, 2]),
+			   f_upper = as.numeric(.$upper[, 2]))} %>%
+	cbind(data_test) %>%                                   # Add the real data
+	ggplot(aes(x = date)) +                                # Plot
+		geom_line(aes(y = btc), color = purple) +
+		geom_line(aes(y = f_mean), color = orange) +
+		geom_line(aes(y = f_lower), color = 'red') +
+		geom_line(aes(y = f_upper), color = 'red') +
+		labs(title = "30 day prediction of BTC",
+			 subtitle = 'Yellow is the prediction') +
+		theme(
+			text = element_text(family = "sans"), # Remove the font warnings
+			plot.title = element_text(family = "sans")
+		)
+
+# Etherium
+forecast(ETH.arima2010.small, h = 30) %>%                  # Forecast
+	{data.frame(f_mean  = as.numeric(.$mean),              # Make into a DF
+				f_lower = as.numeric(.$lower[, 2]),
+				f_upper = as.numeric(.$upper[, 2]))} %>%
+	cbind(data_test) %>%                                   # Add the real data
+	ggplot(aes(x = date)) +                                # Plot
+	geom_line(aes(y = eth), color = purple) +
+	geom_line(aes(y = f_mean), color = orange) +
+	geom_line(aes(y = f_lower), color = 'red') +
+	geom_line(aes(y = f_upper), color = 'red') +
+	labs(title = "30 day prediction of ETH",
+		 subtitle = 'Yellow is the prediction') +
+	theme(
+		text = element_text(family = "sans"), # Remove the font warnings
+		plot.title = element_text(family = "sans")
+	)

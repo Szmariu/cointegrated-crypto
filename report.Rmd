@@ -5,8 +5,14 @@ output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_chunk$set(cache = TRUE)
+knitr::opts_chunk$set(
+	echo = FALSE,
+	cache = FALSE,
+	warning = FALSE,
+	comment = '',
+	fig.width = 16,
+	fig.height = 9
+)
 ```
 
 # Abstract
@@ -46,30 +52,12 @@ purple = "#7B0051"
 Sys.setlocale("LC_ALL","English")
 
 source("functions.R")
-
-# This function scraps the OHLC historical crypto prices from www.coinmarketcap.com
-getCryptoHistoricalPrice <- function(currency){
-	paste0("https://coinmarketcap.com/currencies/",
-		   currency,
-		   "/historical-data/?start=20170101&end=21000101") %>%
-		xml2::read_html() %>%
-		rvest::html_table(.) %>%
-		.[[3]] %>% 
-		as_tibble() %>%
-		rename(Open  = `Open*`,
-			   Close = `Close**`,
-			   MarketCap = `Market Cap`) %>%
-		mutate(Date = as.Date(Date, format = "%b %d, %Y")) %>%
-		mutate_if(is.character, function(x) as.numeric(gsub(",", "", x))) %>%
-		arrange(Date) %>%
-		return()
-}
 ```
 
-```{r }
+```{r data_download}
 ### Data downloading
-btc <- getCryptoHistoricalPrice("bitcoin")
-eth <- getCryptoHistoricalPrice("ethereum")
+btc <- read_csv('data/btc.csv')
+eth <- read_csv('data/eth.csv')
 
 ### Basic ETA
 # Shape
@@ -84,7 +72,7 @@ summary(btc)
 summary(eth)
 ```
 
-```{r }
+```{r plot_btc}
 btc %>%
 	ggplot(aes(Date, Close)) +
 	geom_area(fill = orange, color = orange, alpha = 0.5) +
@@ -95,7 +83,7 @@ btc %>%
 	)
 ```
 
-```{r }
+```{r plot_eth}
 eth %>%
 	ggplot(aes(Date, Close)) +
 	geom_area(fill = orange, color = orange, alpha = 0.5) +
@@ -106,7 +94,7 @@ eth %>%
 	)
 ```
 
-```{r }
+```{r plot_both}
 btc$source <- 'Bitcoin'
 eth$source <- 'Etherium'
 
@@ -128,7 +116,7 @@ bind_rows(btc, eth) %>%
 ```
 
 
-```{r }
+```{r plot_both_2}
 bind_rows(btc, eth) %>%
 	ggplot(aes(Date, ClosePercent)) +
 	geom_line(color = orange) +
@@ -179,7 +167,7 @@ testdf(variable = data$Dbtc,
 	   max.augmentations = 30)
 ```
 
-```{r }
+```{r plot_arima_btc}
 par(mfrow = c(2, 1)) 
 acf(data$Dbtc,
 	lag.max = 36, 
@@ -195,7 +183,7 @@ par(mfrow = c(1, 1))
 ```
 
 
-```{r }
+```{r armia_btc}
 BTC.arima2010.small <- Arima(data$btc,  
 					  		order = c(20, 1, 0),
 							fixed = c(
@@ -221,7 +209,7 @@ plot(resid(BTC.arima2010.small))
 ```
 
 
-```{r }
+```{r double_plot_arima}
 par(mfrow = c(2, 1)) 
 acf(resid(BTC.arima2010.small), 
 	lag.max = 36,
@@ -238,7 +226,7 @@ par(mfrow = c(1, 1))
 
 
 ```{r }
-Box.test(resid(BTC.arima510), type = "Ljung-Box", lag = 10)
+Box.test(resid(BTC.arima2010.small), type = "Ljung-Box", lag = 10)
 ```
 
 ## Etherium
@@ -253,7 +241,7 @@ testdf(variable = data$Deth,
 	   max.augmentations = 30)
 ```
 
-```{r }
+```{r plot_arima_eth}
 par(mfrow = c(2, 1)) 
 acf(data$Deth,
 	lag.max = 36, 
@@ -268,7 +256,7 @@ pacf(data$Deth,
 par(mfrow = c(1, 1)) 
 ```
 
-```{r }
+```{r arima_eth}
 ETH.arima5120.small <- Arima(data$eth,  
 							order = c(5, 1, 20),
 							fixed = c(
@@ -294,7 +282,7 @@ coeftest(ETH.arima5120.small)
 plot(resid(ETH.arima5120.small))
 ```
 
-```{r }
+```{r double_plot_eth}
 par(mfrow = c(2, 1)) 
 acf(resid(ETH.arima5120.small), 
 	lag.max = 36,
@@ -316,7 +304,7 @@ Box.test(resid(ETH.arima5120.small), type = "Ljung-Box", lag = 10)
 
 # ARIMA forecasting
 
-```{r }
+```{r arima_forecast_btc}
 forecast(BTC.arima2010.small, h = 30) %>%                  # Forecast
 	{data.frame(f_mean  = as.numeric(.$mean),              # Make into a DF
 			   f_lower = as.numeric(.$lower[, 2]),
@@ -335,7 +323,7 @@ forecast(BTC.arima2010.small, h = 30) %>%                  # Forecast
 		)
 ```
 
-```{r }
+```{r arima_forecast_eth}
 forecast(ETH.arima5120.small, h = 30) %>%                  # Forecast
 	{data.frame(f_mean  = as.numeric(.$mean),              # Make into a DF
 				f_lower = as.numeric(.$lower[, 2]),
@@ -357,7 +345,7 @@ forecast(ETH.arima5120.small, h = 30) %>%                  # Forecast
 # Cointegration testing
 
 
-```{r }
+```{r lm}
 # BTC and ETH are I(1)
 model.coint <- lm(btc ~ eth, 
 				  data = data)
@@ -373,7 +361,7 @@ testdf(variable = residuals(model.coint),
 ```
 
 
-```{r }
+```{r better_lm}
 data$lresid <- lag.xts(residuals(model.coint))
 model.ecm <- lm(btc ~ eth + lresid - 1,
 				data = data) 
@@ -398,7 +386,7 @@ grangertest(eth ~ btc,
 
 # VAR model
 
-```{r }
+```{r var}
 VARselect(data[ , c('btc', 'eth')], # input data for VAR
 		  lag.max = 10)     # maximum lag
 ```
@@ -409,7 +397,7 @@ summary(var.model)
 ```
 
 ```{r }
-plot(var.model)
+#plot(var.model)
 ```
 
 ```{r }
@@ -420,7 +408,7 @@ serial.test(var.model)
 serial.test(var.model, type = "BG")
 ```
 
-```{r }
+```{r plot_var_btc}
 plot( irf(var.model,
 		  n.ahead = 36) )
 ```
@@ -432,7 +420,7 @@ plot( fevd(var.model,
 
 # Forecasting VAR
 
-```{r }
+```{r forecast_var_btc}
 # Forecast for 30 days
 var.forecast <- predict(var.model, n.ahead = 30, ci = 0.95) 
 
@@ -456,7 +444,7 @@ var.forecast[["fcst"]][["btc"]] %>%
 	)
 ```
 
-```{r }
+```{r forecast_var_eth}
 var.forecast[["fcst"]][["eth"]] %>%
 	as.data.frame() %>%
 	dplyr::select(f_mean = fcst,
@@ -478,7 +466,7 @@ var.forecast[["fcst"]][["eth"]] %>%
 
 # Forecast comparison
 
-```{r }
+```{r forecast_comparison}
 forecast.arima.btc <- forecast(BTC.arima2010.small, h = 30) %>% 
 	.$mean %>%
 	as.vector()

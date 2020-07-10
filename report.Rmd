@@ -7,9 +7,8 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
 	echo = FALSE,
-	cache = FALSE,
 	warning = FALSE,
-	comment = '',
+	comment = '      ',
 	fig.width = 16,
 	fig.height = 9
 )
@@ -24,7 +23,7 @@ and finally creating a VAR model.
 
 # Data
 
-```{R libraries, message = FALSE, warning = FALSE, cache = FALSE}
+```{R libraries, message = FALSE, warning = FALSE, error = FALSE}
 ### Preparation
 # Libraries
 library(tidyverse)
@@ -49,18 +48,16 @@ orange = "#FFB400"
 purple = "#7B0051"
 
 # Fix for the month shorthands
-Sys.setlocale("LC_ALL","English")
+invisible(Sys.setlocale("LC_ALL","English"))
+
+### Data downloading
+btc <- read_csv('data/btc.csv')
+eth <- read_csv('data/eth.csv')
 
 source("functions.R")
 ```
 
 ```{r data_download}
-### Data downloading
-btc <- read_csv('data/btc.csv')
-eth <- read_csv('data/eth.csv')
-
-### Basic ETA
-# Shape
 btc %>% tail
 ```
 
@@ -158,13 +155,13 @@ data <- data %>% head(-30) # So usefull
 
 ```{r }
 testdf(variable = data$btc,
-	   max.augmentations = 30)
+	   max.augmentations = 5)
 ```
 
 
 ```{r }
 testdf(variable = data$Dbtc,
-	   max.augmentations = 30)
+	   max.augmentations = 5)
 ```
 
 ```{r plot_arima_btc}
@@ -233,12 +230,12 @@ Box.test(resid(BTC.arima2010.small), type = "Ljung-Box", lag = 10)
 
 ```{r }
 testdf(variable = data$eth,
-	   max.augmentations = 30)
+	   max.augmentations = 5)
 ```
 
 ```{r }
 testdf(variable = data$Deth,
-	   max.augmentations = 30)
+	   max.augmentations = 5)
 ```
 
 ```{r plot_arima_eth}
@@ -344,6 +341,15 @@ forecast(ETH.arima5120.small, h = 30) %>%                  # Forecast
 
 # Cointegration testing
 
+Since Bitcoin and Etherium are both integrated of 
+order I(1), they could be cointegrated with each other.    
+
+To test this cointegration, a simple 
+linear model can be estimated. The coefficient for eth 
+is very significant, which means that they are in fact cointegrated.    
+
+It seems that a increase in price of ETH by 1 USD means 
+increase od BTC price by around 37 USD.    
 
 ```{r lm}
 # BTC and ETH are I(1)
@@ -353,6 +359,10 @@ model.coint <- lm(btc ~ eth,
 summary(model.coint)
 ```
 
+But, are the residuals autocorrelated?   
+
+Yes, they are autocorrelated of order one. This means that lagged 
+residuals need to be included in the model.  
 
 ```{r }
 testdf(variable = residuals(model.coint), 
@@ -360,14 +370,21 @@ testdf(variable = residuals(model.coint),
 
 ```
 
+The inclusion of lagged residuals seem to be a good
+decision. The coefficient is significant, which 
+hints taht there is a long term relationship
+between this variables in addition to the short term one
+(indicated by the eth).   
 
 ```{r better_lm}
 data$lresid <- lag.xts(residuals(model.coint))
-model.ecm <- lm(btc ~ eth + lresid - 1,
+model.ecm <- lm(btc ~ eth + lresid,
 				data = data) 
 summary(model.ecm)
 ```
 
+Granger test confirms that for 5 lags, there exist a 
+Granger Casuality eth -> btc.   
 
 ```{r }
 grangertest(btc ~ eth, 
@@ -375,6 +392,8 @@ grangertest(btc ~ eth,
 			order = 5) 
 ```
 
+The same results for the other direction. 
+Significant Granger Casuality for btc -> eth.   
 
 ```{r }
 grangertest(eth ~ btc, 
@@ -385,40 +404,43 @@ grangertest(eth ~ btc,
 
 
 # VAR model
-
+*VARselect* function is very usefull when searching for the right number of lags in the VAR model.
+Here, the optimal number seem to be 7 lags, based on AIC and FPE. Could also be 1, 
+but that is not very interesting. 
 ```{r var}
 VARselect(data[ , c('btc', 'eth')], # input data for VAR
 		  lag.max = 10)     # maximum lag
 ```
+
+A large number of variables are significant for p < 0.05.
+Especially lags 3 and 4 seem to be important for this model. 
+
 
 ```{r }
 var.model <- VAR(data[ , c('btc', 'eth')], p = 7)
 summary(var.model)
 ```
 
-```{r }
-#plot(var.model)
-```
+Portmanteau test is on the verge of significance,
+so another test is needed.
 
 ```{r }
 serial.test(var.model)
 ```
 
+Breusch-Godfrey test finds no reason to 
+reject the null hyphotesis that the residuals 
+are not autocorrelated.
+
 ```{r }
 serial.test(var.model, type = "BG")
 ```
 
-```{r plot_var_btc}
-plot( irf(var.model,
-		  n.ahead = 36) )
-```
-
-```{r }
-plot( fevd(var.model,
-		   n.ahead = 36))
-```
-
 # Forecasting VAR
+The 30 day forecast for Bitcoin using the VAR model is very close to 
+the real values. Because the currency did not move significantly 
+the predictions are also very stable. In some sense they 
+even look like a simple linear regression, but this is only due to the previous prices.     
 
 ```{r forecast_var_btc}
 # Forecast for 30 days
@@ -444,6 +466,11 @@ var.forecast[["fcst"]][["btc"]] %>%
 	)
 ```
 
+
+Same story with Etherium. The predictions are very stable, but they do follow the 
+general trend in the data. They also look kind of like a linear reggresion.      
+
+
 ```{r forecast_var_eth}
 var.forecast[["fcst"]][["eth"]] %>%
 	as.data.frame() %>%
@@ -465,6 +492,18 @@ var.forecast[["fcst"]][["eth"]] %>%
 ```
 
 # Forecast comparison
+
+Metric used here is sMAPE, Symmetric Mean Absolute Percentage Error. 
+It was chosen, because it is unit indifferent and it calculates 
+negative errors with the same weight as the positive ones.     
+
+The results are good, sMAPE of *4.3%* for ARIMA and *3.4%* for
+VAR are very solid. It can be seen, that is this situation 
+the VAR model performed significantly better then ARIMA.   
+
+The differences between BTC and ETH within both models 
+were insignificant, which hints that these type of models 
+could be used with other crypto currencies. 
 
 ```{r forecast_comparison}
 forecast.arima.btc <- forecast(BTC.arima2010.small, h = 30) %>% 

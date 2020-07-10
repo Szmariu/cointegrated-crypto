@@ -234,8 +234,6 @@ ETC.arima2010 <- Arima(data$eth,
 # Other are significant
 coeftest(ETC.arima2010)
 
-length()
-
 # Let's estimate it with only the significant ones
 ETC.arima2010.small <- Arima(data$btc,  
 							 order = c(20, 1, 0),

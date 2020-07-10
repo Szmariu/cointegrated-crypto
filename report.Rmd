@@ -6,6 +6,7 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(cache = TRUE)
 ```
 
 # Abstract
@@ -17,7 +18,7 @@ and finally creating a VECM (VAR) model.
 
 # Data
 
-```{R libraries, message = FALSE, warning = FALSE}
+```{R libraries, message = FALSE, warning = FALSE, cache = FALSE}
 ### Preparation
 # Libraries
 library(tidyverse)
@@ -32,6 +33,8 @@ purple = "#7B0051"
 
 # Fix for the month shorthands
 Sys.setlocale("LC_ALL","English")
+
+source("functions.R")
 
 # This function scraps the OHLC historical crypto prices from www.coinmarketcap.com
 getCryptoHistoricalPrice <- function(currency){
@@ -127,25 +130,158 @@ bind_rows(btc, eth) %>%
 ```
 
 
+
+# ARIMA
+## Bitcoin
+
+
 ```{r }
+testdf(variable = data$btc,
+	   max.augmentations = 30)
+```
+
+
+```{r }
+testdf(variable = data$Dbtc,
+	   max.augmentations = 30)
+```
+
+```{r }
+par(mfrow = c(2, 1)) 
+acf(data$Dbtc,
+	lag.max = 36, 
+	ylim = c(-0.1, 0.1),    
+	lwd = 5,               
+	col = orange) 
+
+pacf(data$Dbtc, 
+	 lag.max = 36, 
+	 lwd = 5,
+	 col = orange)
+par(mfrow = c(1, 1))
+```
+
+
+```{r }
+BTC.arima2010.small <- Arima(data$btc,  
+					  		order = c(20, 1, 0),
+							fixed = c(
+								NA, #1
+								rep(0, 7),
+								NA, #9
+								rep(0, 8),
+								NA, # 18
+								0,
+								NA # 20
+							)
+)
+```
+
+
+```{r }
+coeftest(BTC.arima2010.small)
+```
+
+
+```{r }
+plot(resid(BTC.arima2010.small))
+```
+
+
+```{r }
+par(mfrow = c(2, 1)) 
+acf(resid(BTC.arima2010.small), 
+	lag.max = 36,
+	ylim = c(-0.1, 0.1), 
+	lwd = 5, col = orange,
+	na.action = na.pass)
+pacf(resid(BTC.arima2010.small), 
+	 lag.max = 36, 
+	 lwd = 5, col = orange,
+	 na.action = na.pass)
+par(mfrow = c(1, 1))
 
 ```
 
 
 ```{r }
+Box.test(resid(BTC.arima510), type = "Ljung-Box", lag = 10)
+```
 
+## Etherium
+
+```{r }
+testdf(variable = data$eth,
+	   max.augmentations = 30)
 ```
 
 
 ```{r }
+testdf(variable = data$Deth,
+	   max.augmentations = 30)
+```
 
+
+```{r }
+par(mfrow = c(2, 1)) 
+acf(data$Deth,
+	lag.max = 36, 
+	ylim = c(-0.1, 0.1),    
+	lwd = 5,               
+	col = orange) 
+
+pacf(data$Deth, 
+	 lag.max = 36, 
+	 lwd = 5,
+	 col = orange)
+par(mfrow = c(1, 1)) 
+```
+
+
+```{r }
+ETC.arima2010.small <- Arima(data$btc,  
+							 order = c(20, 1, 0),
+							 fixed = c(
+							 	NA, #1
+							 	rep(0, 18),
+							 	NA # 20
+							 )
+)
+```
+
+
+```{r }
+coeftest(ETC.arima2010.small)
+```
+
+
+```{r }
+plot(resid(ETC.arima2010.small))
+```
+
+
+```{r }
+par(mfrow = c(2, 1)) 
+acf(resid(ETC.arima2010.small), 
+	lag.max = 36,
+	ylim = c(-0.1, 0.1), 
+	lwd = 5, col = orange,
+	na.action = na.pass)
+pacf(resid(ETC.arima2010.small), 
+	 lag.max = 36, 
+	 lwd = 5, col = orange,
+	 na.action = na.pass)
+par(mfrow = c(1, 1))
+```
+
+
+```{r }
+Box.test(resid(BTC.arima510), type = "Ljung-Box", lag = 10)
 ```
 
 
 
-# Basic ARIMA
 
-# Optimized ARIMA
 
 # ARIMA forecasting
 

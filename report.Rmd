@@ -15,6 +15,12 @@ knitr::opts_chunk$set(
 ```
 
 # Abstract
+For predicting Bitcoin and Etherium prices both ARIMA and VAR models 
+seem to be good choices. ARIMA was slightly weaker with sMAPE of
+*4.3%*, compared to *3.4%* achived by the VAR model. It was observed 
+that for the examined period of time, Bitcoin and Etherium close
+prices are cointegrated. 
+
 
 # Aim of the study
 This study tries to create optimal models for predicting Bitcoin and Etherum
@@ -71,6 +77,8 @@ source("functions.R")
 btc %>% tail
 ```
 
+\newpage
+
 The Bitcoin plot looks like this. Significant changes in price in both directions with no 
 visible trend, but nothing like 2018.   
 
@@ -98,6 +106,8 @@ eth %>%
 		plot.title = element_text(family = "sans")
 	)
 ```
+
+\newpage
 
 Plotting both prices as % of a max price confirms this. 
 Etherium reacts to changes stronger than Bitcoin. They do hovever 
@@ -606,8 +616,22 @@ data.frame(
 
 # Conclusion
 
+Based on the observed period, it seems that both ARIMA and VAR models 
+are good choices for predicting the price of Bitcoin and Etherium. 
+Final models for ARIMA were:   
 
+- ARIMA(20, 1, 0) - Bitcoin
+- ARIMA(5, 1, 20) - Etherium
 
+For VAR, the best number of lags was 7. The VAR model achived better results,
+thanks to very strong cointegration of the two prices.   
 
+Next steps would be to test more currency pairs (ideally using some 
+kind of automation automation). If good results were found 
+for some smaller currencys, they could be used for trading. 
+When testing multiple times, one needs to be wary of the type one error.
+Assuming a lower p value of e.g. 0.01 would be advisable.   
 
+Other possibilites could be to use cross validation to test the performance 
+of the models on different parts of data (the one choosen was quite calm). 
 
